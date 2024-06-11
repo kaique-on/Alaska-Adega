@@ -79,13 +79,13 @@ class _CadastroState extends State<Cadastro> {
               ElevatedButton(
                 
                 onPressed: () {
-                  User user = User(
+                  UserModel user = UserModel(
                   email: emailController.text, 
                   senha: senhaController.text,
                   nome: nomeController.text,
                   
                   );
-                  userController.cadastrar(context, codigoController.text, user);
+                  userController.cadastrar(context, user, codigoController.text);
                 },
                 child: Text('Criar conta', style: TextStyle(color: Colors.white, fontSize: 20)),
                 style: ElevatedButton.styleFrom(

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
 
-  final int index;
+ 
 
-  const Home({super.key, required this.index});
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
