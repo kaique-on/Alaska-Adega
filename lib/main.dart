@@ -9,9 +9,14 @@ void main() async {
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(ChangeNotifierProvider(
-    create: (context) => UserController(),
-    child: MyApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserController()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends MaterialApp {
