@@ -1,4 +1,5 @@
 import 'package:alaska_estoque/firebase_options.dart';
+import 'package:alaska_estoque/products/controller/product_controller.dart';
 import 'package:alaska_estoque/ui/tela_login.dart';
 import 'package:alaska_estoque/user/controller/user_controller.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,7 +13,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserController()),
+        ChangeNotifierProvider(create: (_) => ProductController()),
       ],
       child: MyApp(),
     ),

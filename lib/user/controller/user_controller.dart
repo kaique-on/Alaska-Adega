@@ -1,6 +1,4 @@
-import 'dart:js_interop';
 import 'package:alaska_estoque/ui/tela_home.dart';
-import 'package:alaska_estoque/user/database/user_dados.dart';
 import 'package:alaska_estoque/user/model/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';

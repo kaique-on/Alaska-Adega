@@ -1,12 +1,23 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Product {
+  String id;
   String name;
   double price;
   int quantity;
   String category;
   String image;
-  String description = "";
+  String description;
 
-  Product({ required this.name, required this.price, required this.quantity, required this.category, required this.image});
+  Product({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.quantity,
+    required this.category,
+    required this.image,
+    this.description = '', // Valor padrão definido aqui
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -18,10 +29,30 @@ class Product {
       "description": description
     };
   }
-  static Product fromMap(Map<String, dynamic> json){
-    var product = Product( name: json["name"], price: json["price"], quantity: json["quantity"], category: json["category"], image: json["image"]);
-    return product;
+
+  static Product fromSnapshot(DocumentSnapshot snapshot) {
+    var data = snapshot.data() as Map<String, dynamic>;
+    return Product(
+      id: snapshot.id,
+      name: data['name'] ?? '', // Provide default values if null
+      price: data['price']?.toDouble() ?? 0.0,
+      quantity: data['quantity'] ?? 0,
+      category: data['category'] ?? '',
+      image: data['image'] ?? '',
+      description: data['description'] ?? '',
+    );
   }
 
-
+  static Product fromMap(Map<String, dynamic> map, String id) {
+    var product = Product(
+      id: id,
+      name: map["name"] ?? '',
+      price: map["price"]?.toDouble() ?? 0.0,
+      quantity: map["quantity"] ?? 0,
+      category: map["category"] ?? '',
+      image: map["image"] ?? '',
+      description: map['description'] ?? '',
+    );
+    return product;
+  }
 }
