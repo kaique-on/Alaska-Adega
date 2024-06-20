@@ -1,5 +1,6 @@
 import 'package:alaska_estoque/firebase_options.dart';
 import 'package:alaska_estoque/products/controller/product_controller.dart';
+import 'package:alaska_estoque/ui/tela_home.dart';
 import 'package:alaska_estoque/ui/tela_login.dart';
 import 'package:alaska_estoque/user/controller/user_controller.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,5 +22,5 @@ void main() async {
 }
 
 class MyApp extends MaterialApp {
-   MyApp({super.key}) : super(home: Login());
+   MyApp({super.key}) : super(home: Home(/*user: user*/));
 }

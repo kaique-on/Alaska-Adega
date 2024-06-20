@@ -95,7 +95,7 @@ class UserController with ChangeNotifier {
       );
       _user = await convertMapToObject(emailController);
       notifyListeners();
-      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (builder) => Home(user: user)), (route) => false);
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (builder) => Home(/*user: user*/)), (route) => false);
       notifyListeners();
       print("teste: $_user");
     } on FirebaseAuthException catch (e) {

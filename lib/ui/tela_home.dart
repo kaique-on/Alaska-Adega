@@ -1,27 +1,29 @@
 import 'package:alaska_estoque/products/controller/product_controller.dart';
 import 'package:alaska_estoque/products/model/product_model.dart';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+
 class Home extends StatefulWidget {
-  final user;
-  const Home({super.key, required this.user});
+  // final user;
+  const Home({super.key,/* required this.user*/});
 
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-    late Future<List<Product>> productsFuture;
+  late Future<List<Product>> productsFuture;
+  late ProductController productController;
 
   @override
   void initState() {
     super.initState();
-    productsFuture = Provider.of<ProductController>(context, listen: false).getProduct();
+    productController = Provider.of<ProductController>(context, listen: false);
+    productsFuture = productController.getProduct();
   }
-  
-  final textoItem = TextEditingController();
 
+  final textoItem = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -30,58 +32,128 @@ class _HomeState extends State<Home> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8),
-            child: ElevatedButton(onPressed: () {
-              final productController = Provider.of<ProductController>(context, listen:  false);
-              productController.addProduct(context, Product(id: '', name: 'Produto teste', price: 10, quantity: 5, category: 'teste', image: 'url da imagem'));
-            }, child: Text('Adicionar produto')),
+            child: ElevatedButton(
+              onPressed: () async {
+                final productController = Provider.of<ProductController>(context, listen: false);
+                await productController.addProduct(
+                  context,
+                  Product(
+                    id: '',
+                    name: 'Produto 195',
+                    price: 10,
+                    quantity: 5,
+                    category: 'categoria 15',
+                    image: 'url da imagem'
+                  )
+                );
+                setState(() {
+                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                });
+              },
+              child: const Text('Adicionar produto'),
+            ),
           ),
           Expanded(
-            child: Consumer<ProductController>(
-              builder: (context, productController, _){
-                return FutureBuilder<List<Product>>(
-                  future: productsFuture,
-                  builder: (context, snapshot){
-                    if(snapshot.connectionState == ConnectionState.waiting){
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    if(snapshot.hasError){
-                      return Center(child: Text('Erro ao carregar produtos ${snapshot.error}'),);
-                    }
-                    List<Product> products = snapshot.data ?? [];
+            child: FutureBuilder<List<Product>>(
+              future: productsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Erro ao carregar produtos ${snapshot.error}'),
+                  );
+                }
 
-          
+                List<Product> products = snapshot.data ?? [];
+                Set<String> categories = products.map((product) => product.category).toSet();
+                categories.add('geral');
 
-                    if (products.isEmpty) {
-                      return Center(child: Text("Nenhum item na lista"));
-                    }
-                    return ListView.builder(
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        Product product = products[index];
-            
-                        return ListTile(
-                          title: Text(product.name),
-                          subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
-                          trailing: Row(
-                            children: [
-                              IconButton(onPressed: productController.addItem(context, product.name, product.quantity), icon: Icon(Icons.plus_one)),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () {
-                                  productController.deleteItem(context, products[index].name
-                                  );
-                                },
+                if (products.isEmpty) {
+                  return const Center(child: Text("Nenhum item na lista"));
+                }
+
+                return Column(
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                      child: Row(
+                        children: categories.map((category) {
+                          return GestureDetector(
+                            onTap: () async {
+                              setState(() {
+                                if (category == "geral") {
+                                  productsFuture = productController.getProduct(); // Carrega todos os produtos
+                                } else {
+                                  productsFuture = productController.getProduct(categoryFilter: category);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                              margin: const EdgeInsets.only(right: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(20),
                               ),
-                            ],
-                          ),
-                        );
-                      }
-                    );
-                  }
-                  
+                              child: Text(
+                                category,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          Product product = products[index];
+                          return ListTile(
+                            title: Text(product.name),
+                            subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
+                            trailing: SizedBox(
+                              width: 150,
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () async {
+                                      await productController.addItem(context, product.name, product.quantity);
+                                    setState(() {
+                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                });},
+                                    icon: const Icon(Icons.add),
+                                  ),
+                                  Text(product.quantity.toString()),
+                                  IconButton(
+                                    onPressed: () async {
+                                      await productController.decreaseItem(context, product.name, product.quantity);
+                                   setState(() {
+                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                }); },
+                                    icon: const Icon(Icons.remove),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete),
+                                    onPressed: () {
+                                      productController.deleteItem(context, products[index].name);
+                                     setState(() {
+                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                }); } ,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
-              }
-                
+              },
             ),
           ),
         ],
@@ -89,6 +161,7 @@ class _HomeState extends State<Home> {
     );
   }
 }
+
 /* 
 import 'package:flutter/material.dart';
 
