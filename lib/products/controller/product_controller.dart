@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class ProductController with ChangeNotifier {
   List<Product> productsList = [];
 
-  Future<List<Product>> getProduct({String? categoryFilter}) async {
+  Future<List<Product>> getAllProducts({String? categoryFilter}) async {
     final db = FirebaseFirestore.instance;
 
     try {
@@ -31,6 +31,44 @@ class ProductController with ChangeNotifier {
       throw e;
     }
   }
+  Future<List<Product>> getProduct(String id, {String? categoryFilter}) async {
+  final db = FirebaseFirestore.instance;
+
+  try {
+    DocumentSnapshot documentSnapshot;
+
+    if (id.isNotEmpty) {
+      documentSnapshot = await db.collection('products').doc(id).get();
+      if (documentSnapshot.exists) {
+        Product product = Product.fromSnapshot(documentSnapshot);
+        productsList = [product];
+      } else {
+        productsList = [];
+      }
+    } else {
+      QuerySnapshot querySnapshot;
+
+      if (categoryFilter != null && categoryFilter.isNotEmpty) {
+        querySnapshot = await db
+            .collection('products')
+            .where('category', isEqualTo: categoryFilter)
+            .get();
+      } else {
+        querySnapshot = await db.collection('products').get();
+      }
+      productsList = querySnapshot.docs
+          .map((document) => Product.fromSnapshot(document))
+          .where((product) => product.id != 'SaAf7kOeu93DulrFYQvv')
+          .toList();
+    }
+
+    notifyListeners();
+    return productsList;
+  } catch (e) {
+    print("Erro ao buscar produtos: $e");
+    throw e;
+  }
+}
 
   Future<void> addProduct(context, Product product) async {
     var result = productsList.where((item) => item.name == product.name);

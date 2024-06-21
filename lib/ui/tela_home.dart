@@ -15,12 +15,13 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late Future<List<Product>> productsFuture;
   late ProductController productController;
+  String selectedCategory = 'geral';
 
   @override
   void initState() {
     super.initState();
     productController = Provider.of<ProductController>(context, listen: false);
-    productsFuture = productController.getProduct();
+    productsFuture = productController.getAllProducts();
   }
 
   final textoItem = TextEditingController();
@@ -39,15 +40,15 @@ class _HomeState extends State<Home> {
                   context,
                   Product(
                     id: 'orrvEC7EwPiooRb1KEKT',
-                    name: 'Produto 4395',
+                    name: 'Produto 4695',
                     price: 150,
                     quantity: 5,
-                    category: 'categoria 415',
-                    image: 'url da imagem'
+                    category: 'categoria 445',
+                    image: 'https://nossadistribuidorabebidas.com.br/wp-content/uploads/2021/11/Heineken-350ml.png'
                   ), 
                 );
                 setState(() {
-                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                  productsFuture = productController.getAllProducts(); // Atualiza a lista de produtos após adicionar um novo produto
                 });
               },
               child: const Text('Adicionar produto'),
@@ -70,43 +71,54 @@ class _HomeState extends State<Home> {
 
                     List<Product> products = snapshot.data ?? [];
                     Set<String> categories = products.map((product) => product.category).toSet();
+                    
                     categories.add('geral');
 
                     if (products.isEmpty) {
                       return const Center(child: Text("Nenhum item na lista"));
                     }
-
+                    
                     return Column(
                       children: [
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-                          child: Row(
-                            children: categories.map((category) {
-                              return GestureDetector(
-                                onTap: () async {
-                                  setState(() {
-                                    if (category == "geral") {
-                                      productsFuture = productController.getProduct(); // Carrega todos os produtos
-                                    } else {
-                                      productsFuture = productController.getProduct(categoryFilter: category);
-                                    }
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                                  margin: const EdgeInsets.only(right: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    category,
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
+                        //categorias
+                        SizedBox(
+                          width: 400,
+                          height: 32,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            
+                            child: Row(
+                              children: [
+                                SizedBox(width: 20),
+                                Row(
+                                  children: categories.map((category) {
+                                    return GestureDetector(
+                                      onTap: () async {
+                                        setState(() {
+                                          selectedCategory = category;
+                                          if (category == "geral") {
+                                            productsFuture = productController.getAllProducts(); // Carrega todos os produtos
+                                          } else {
+                                            productsFuture = productController.getAllProducts(categoryFilter: category);
+                                          }
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                        child: Container(
+                                        decoration: BoxDecoration(border: Border.all(width: 1, color: selectedCategory == category ? Colors.indigo[900]! : Colors.grey,
+), borderRadius: BorderRadius.circular(25)),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                                          child: Text(category, style: TextStyle(color: selectedCategory == category ? Colors.indigo[900]! : Colors.grey, fontWeight: FontWeight.bold),),
+                                        ),
+                                                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
-                              );
-                            }).toList(),
+                              ],
+                            ),
                           ),
                         ),
                         Expanded(
@@ -114,51 +126,89 @@ class _HomeState extends State<Home> {
                             itemCount: products.length,
                             itemBuilder: (context, index) {
                               Product product = products[index];
-                              return ListTile(
-                                title: Text(product.name),
-                                subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
-                                trailing: SizedBox(
-                                  width: 150,
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () async {
-                                          await productController.addItem(context, product.id, product.quantity);
-                                        },
-                                        icon: const Icon(Icons.add),
-                                      ),
-                                      Text(product.quantity.toString()),
-                                      IconButton(
-                                        onPressed: () async {
-                                          await productController.decreaseItem(context, product.id, product.quantity);
-                                        },
-                                        icon: const Icon(Icons.remove),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        onPressed: () async {
-                                          await productController.deleteItem(context, products[index].id);
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
+                              return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Image.network(product.image, height: 75, width: 75),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(
+                        product.price.toString(),
+                        style: TextStyle(color: Colors.indigo[900], fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () async{
+                             productController.decreaseItem(context, product.id, product.quantity);
+                          },
+                          icon: const Icon(Icons.remove),
+                        ),
+                        Text(
+                          product.quantity.toString(),
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          onPressed: () async{
+                             productController.addItem(context, product.id, product.quantity);
+                          },
+                          icon: const Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: () async{
+                             productController.deleteItem(context, product.id);
+                          },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.indigo[900],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Text(
+                            "Editar",
+                            style: TextStyle(fontSize: 12, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }))]);});
                             },
                           ),
                         ),
                       ],
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+                    ));
+                  }
+      
+              }
+            
 
 /* 
 import 'package:flutter/material.dart';
@@ -443,3 +493,35 @@ class _HomeState extends State<Home> {
 
         
           */
+
+
+          /* ListTile(
+                                title: Text(product.name),
+                                subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
+                                trailing: SizedBox(
+                                  width: 150,
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () async {
+                                          await productController.addItem(context, product.id, product.quantity);
+                                        },
+                                        icon: const Icon(Icons.add),
+                                      ),
+                                      Text(product.quantity.toString()),
+                                      IconButton(
+                                        onPressed: () async {
+                                          await productController.decreaseItem(context, product.id, product.quantity);
+                                        },
+                                        icon: const Icon(Icons.remove),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        onPressed: () async {
+                                          await productController.deleteItem(context, products[index].id);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ); */
