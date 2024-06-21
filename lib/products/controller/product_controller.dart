@@ -1,5 +1,6 @@
 import 'package:alaska_estoque/products/model/product_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class ProductController with ChangeNotifier {
@@ -31,10 +32,6 @@ class ProductController with ChangeNotifier {
     }
   }
 
-
-
-
-
   Future<void> addProduct(context, Product product) async {
     var result = productsList.where((item) => item.name == product.name);
     print(result);
@@ -63,69 +60,27 @@ class ProductController with ChangeNotifier {
     }
   }
 
-  Future<void> addItem(context, String name, int quantity) async {
-    Product? product = await convertMapToObject(name);
+  Future<void> addItem(context, String id, int quantity) async {
+    Product? product = await convertMapToObject(id);
     if (product != null) {
       final db = FirebaseFirestore.instance;
       try {
-        QuerySnapshot querySnapshot = await db
-            .collection('products')
-            .where('name', isEqualTo: name)
-            .limit(1)
-            .get();
-        if (querySnapshot.docs.isNotEmpty) {
-          DocumentReference docRef = querySnapshot.docs.first.reference;
+        final docSnapshot = await db.collection('products').doc(id).get();
+        int indexProduct = productsList.indexWhere((product) => product.id == id);
+        if (docSnapshot.exists && productsList[indexProduct].quantity > 0) {
           quantity++;
-          await docRef.update(
-              {'quantity': quantity}); // atualiza a quantidade do firebase
-          productsList.forEach((product) {
-            if (product.name == name) {
-              product.quantity =
-                  quantity; // atualiza a quantidade da variavel local
-              notifyListeners();
-            }
-          });
-          print("Aumentou a quantidade em 1");
-        } else {
-          print("produto $name não encontrado");
-        }
-      } catch (e) {
-        print("Erro ao atualizar produto: $e");
-        throw e;
-      }
-    }
-  }
-
-  Future<void> decreaseItem(context, String name, int quantity) async {
-    Product? product = await convertMapToObject(name);
-    if (product != null) {
-      final db = FirebaseFirestore.instance;
-      try {
-        QuerySnapshot querySnapshot = await db
-            .collection('products')
-            .where('name', isEqualTo: name)
-            .limit(1)
-            .get();
-        int indexProduct =
-            productsList.indexWhere((product) => product.name == name);
-        if (querySnapshot.docs.isNotEmpty &&
-            productsList[indexProduct].quantity > 0) {
-          DocumentReference docRef = querySnapshot.docs.first.reference;
-          quantity--;
-          await docRef.update(
-              {'quantity': quantity}); // atualiza a quantidade do firebase
+          await db.collection('products').doc(id).update({'quantity': quantity});
           productsList.forEach(
             (product) {
-              if (product.name == name) {
-                product.quantity =
-                    quantity; // atualiza a quantidade da variavel local
+              if (product.id == id) {
+                product.quantity = quantity; // atualiza a quantidade da variavel local
                 notifyListeners();
               }
             },
           );
           print("Diminuiu a quantidade em 1");
         } else {
-          print("produto $name não encontrado");
+          print("produto $id não encontrado");
         }
       } catch (e) {
         print("Erro ao atualizar produto: $e");
@@ -134,41 +89,69 @@ class ProductController with ChangeNotifier {
     }
   }
 
-  //procura se a string name recebida esta no documentos produto e se estiver retorna ele como objeto
-  convertMapToObject(String name) async {
-    final db = FirebaseFirestore.instance;
-    try {
-      final querySnapshot =
-          await db.collection("products").where("name", isEqualTo: name).get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        final productData = querySnapshot.docs.first.data();
-        return Product.fromMap(productData, querySnapshot.docs.first.id);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print("Erro ao buscar produto por nome: $e");
-      throw e;
-    }
-  }
-
-  void deleteItem(context, String name) async {
-    Product? product = await convertMapToObject(name);
+  Future<void> decreaseItem(context, String id, int quantity) async {
+    Product? product = await convertMapToObject(id);
     if (product != null) {
       final db = FirebaseFirestore.instance;
       try {
-        final querySnapshot = await db
-            .collection("products")
-            .where("name", isEqualTo: name)
-            .get();
+        final docSnapshot = await db.collection('products').doc(id).get();
+        int indexProduct = productsList.indexWhere((product) => product.id == id);
+        if (docSnapshot.exists && productsList[indexProduct].quantity > 0) {
+          quantity--;
+          await db.collection('products').doc(id).update({'quantity': quantity});
+          productsList.forEach(
+            (product) {
+              if (product.id == id) {
+                product.quantity = quantity; // atualiza a quantidade da variavel local
+                notifyListeners();
+              }
+            },
+          );
+          print("Diminuiu a quantidade em 1");
+        } else {
+          print("produto $id não encontrado");
+        }
+      } catch (e) {
+        print("Erro ao atualizar produto: $e");
+        throw e;
+      }
+    }
+  }
 
-        if (querySnapshot.docs.isNotEmpty) {
-          querySnapshot.docs.forEach((document) async {
-            await db.collection("products").doc(document.id).delete();
-          });
+  //procura se a string id recebida esta no documentos produto e se estiver retorna ele como objeto
+  Future<Product?> convertMapToObject(String id) async {
+  final db = FirebaseFirestore.instance;
+  try {
+    // Busca o documento com o ID especificado
+    final docSnapshot = await db.collection('products').doc(id).get();
+
+    // Verifica se o documento foi encontrado
+    if (docSnapshot.exists) {
+      final productData = docSnapshot.data() as Map<String, dynamic>;
+      return Product.fromMap(productData, docSnapshot.id);
+    } else {
+      print("Produto com ID $id não encontrado");
+      return null;
+    }
+  } catch (e) {
+    print("Erro ao buscar produto por ID: $e");
+    throw e;
+  }
+}
+
+  Future<void> deleteItem(context, String id) async {
+    Product? product = await convertMapToObject(id);
+    if (product != null) {
+      final db = FirebaseFirestore.instance;
+      try {
+        final docSnapshot = await db.collection('products').doc(id).get();
+
+        print(docSnapshot.data());
+
+        if (docSnapshot.exists) {
+          await db.collection("products").doc(docSnapshot.id).delete();
           // Remover o produto da lista local
-          productsList.removeWhere((element) => element.name == name);
+          productsList.removeWhere((element) => element.id == id);
           notifyListeners();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -209,57 +192,113 @@ class ProductController with ChangeNotifier {
       }
     }
   }
-
   Future<void> editItem(context, Product product, String id) async {
     final db = FirebaseFirestore.instance;
-    final querySnapshot = await db
-        .collection("products")
-        .where("id", isEqualTo: id)
-        .get();
-    if (querySnapshot.docs.isNotEmpty) {
-      String productID = querySnapshot.docs.first.id;
-      db.collection('products').doc(productID).update(product.toMap()).then(
-        (_) {
-          int index = productsList.indexWhere((item) => item.id == product.id);
-          if (index != -1) {
-            productsList[index] = product;
-            notifyListeners();
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: Colors.green,
-              content: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Produto atualizado com sucesso!',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  Icon(Icons.check)
-                ],
-              ),
+    try{
+      await db.collection('products').doc(id).update(product.toMap());
+      var indexProdutoAntigo = productsList.indexWhere((product) => product.id == id);
+      if(indexProdutoAntigo != -1){
+        productsList[indexProdutoAntigo] = product;
+        notifyListeners();
+      }else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Produto não existente!',
+                  style: TextStyle(fontSize: 10),
+                ),
+                Icon(Icons.error)
+              ],
             ),
-          );
-        },
-      ).catchError(
-        (error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: Colors.red,
-              content: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Ocorreu um erro!',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  Icon(Icons.error)
-                ],
-              ),
+          ));
+      }
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Produto editado com sucesso!',
+                  style: TextStyle(fontSize: 10),
+                ),
+                Icon(Icons.check)
+              ],
             ),
-          );
-        },
-      );
+          ));
+    } catch(e){
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Ocorreu um erro ao editar o produto!',
+                  style: TextStyle(fontSize: 10),
+                ),
+                Icon(Icons.error)
+              ],
+            ),
+          ));
     }
+
   }
+
+  // Future<void> editItem(context, Product product, String id) async {
+  //   final db = FirebaseFirestore.instance;
+  //   final querySnapshot = await db
+  //       .collection("products")
+  //       .where("id", isEqualTo: id)
+  //       .get();
+  //   if (querySnapshot.docs.isNotEmpty) {
+  //     String productID = querySnapshot.docs.first.id;
+  //     db.collection('products').doc(productID).update(product.toMap()).then(
+  //       (_) {
+  //         int index = productsList.indexWhere((item) => item.id == product.id);
+  //         if (index != -1) {
+  //           productsList[index] = product;
+  //           notifyListeners();
+  //         }
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(
+  //             backgroundColor: Colors.green,
+  //             content: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text(
+  //                   'Produto atualizado com sucesso!',
+  //                   style: TextStyle(fontSize: 10),
+  //                 ),
+  //                 Icon(Icons.check)
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     ).catchError(
+  //       (error) {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(
+  //             backgroundColor: Colors.red,
+  //             content: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text(
+  //                   'Ocorreu um erro!',
+  //                   style: TextStyle(fontSize: 10),
+  //                 ),
+  //                 Icon(Icons.error)
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     );
+  //   }
+  // }
 }

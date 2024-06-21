@@ -38,13 +38,13 @@ class _HomeState extends State<Home> {
                 await productController.addProduct(
                   context,
                   Product(
-                    id: '',
-                    name: 'Produto 195',
-                    price: 10,
+                    id: 'orrvEC7EwPiooRb1KEKT',
+                    name: 'Produto 4395',
+                    price: 150,
                     quantity: 5,
-                    category: 'categoria 15',
+                    category: 'categoria 415',
                     image: 'url da imagem'
-                  )
+                  ), 
                 );
                 setState(() {
                   productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
@@ -121,7 +121,7 @@ class _HomeState extends State<Home> {
                                 children: [
                                   IconButton(
                                     onPressed: () async {
-                                      await productController.addItem(context, product.name, product.quantity);
+                                      await productController.addItem(context, product.id, product.quantity);
                                     setState(() {
                   productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
                 });},
@@ -130,18 +130,18 @@ class _HomeState extends State<Home> {
                                   Text(product.quantity.toString()),
                                   IconButton(
                                     onPressed: () async {
-                                      await productController.decreaseItem(context, product.name, product.quantity);
+                                      await productController.decreaseItem(context, product.id, product.quantity);
                                    setState(() {
-                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                  productsFuture = productController.getProduct();
                 }); },
                                     icon: const Icon(Icons.remove),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete),
-                                    onPressed: () {
-                                      productController.deleteItem(context, products[index].name);
+                                    onPressed: () async{
+                                     await productController.deleteItem(context, products[index].id);
                                      setState(() {
-                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
+                  productsFuture = productController.getProduct();
                 }); } ,
                                   ),
                                 ],
