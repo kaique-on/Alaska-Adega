@@ -54,104 +54,102 @@ class _HomeState extends State<Home> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<Product>>(
-              future: productsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Erro ao carregar produtos ${snapshot.error}'),
-                  );
-                }
+            child: Consumer<ProductController>(
+              builder: (context, productController, _) {
+                return FutureBuilder<List<Product>>(
+                  future: productsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text('Erro ao carregar produtos ${snapshot.error}'),
+                      );
+                    }
 
-                List<Product> products = snapshot.data ?? [];
-                Set<String> categories = products.map((product) => product.category).toSet();
-                categories.add('geral');
+                    List<Product> products = snapshot.data ?? [];
+                    Set<String> categories = products.map((product) => product.category).toSet();
+                    categories.add('geral');
 
-                if (products.isEmpty) {
-                  return const Center(child: Text("Nenhum item na lista"));
-                }
+                    if (products.isEmpty) {
+                      return const Center(child: Text("Nenhum item na lista"));
+                    }
 
-                return Column(
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-                      child: Row(
-                        children: categories.map((category) {
-                          return GestureDetector(
-                            onTap: () async {
-                              setState(() {
-                                if (category == "geral") {
-                                  productsFuture = productController.getProduct(); // Carrega todos os produtos
-                                } else {
-                                  productsFuture = productController.getProduct(categoryFilter: category);
-                                }
-                              });
+                    return Column(
+                      children: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                          child: Row(
+                            children: categories.map((category) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  setState(() {
+                                    if (category == "geral") {
+                                      productsFuture = productController.getProduct(); // Carrega todos os produtos
+                                    } else {
+                                      productsFuture = productController.getProduct(categoryFilter: category);
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                                  margin: const EdgeInsets.only(right: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    category,
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: products.length,
+                            itemBuilder: (context, index) {
+                              Product product = products[index];
+                              return ListTile(
+                                title: Text(product.name),
+                                subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
+                                trailing: SizedBox(
+                                  width: 150,
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () async {
+                                          await productController.addItem(context, product.id, product.quantity);
+                                        },
+                                        icon: const Icon(Icons.add),
+                                      ),
+                                      Text(product.quantity.toString()),
+                                      IconButton(
+                                        onPressed: () async {
+                                          await productController.decreaseItem(context, product.id, product.quantity);
+                                        },
+                                        icon: const Icon(Icons.remove),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        onPressed: () async {
+                                          await productController.deleteItem(context, products[index].id);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                              margin: const EdgeInsets.only(right: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.blue,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                category,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          Product product = products[index];
-                          return ListTile(
-                            title: Text(product.name),
-                            subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
-                            trailing: SizedBox(
-                              width: 150,
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: () async {
-                                      await productController.addItem(context, product.id, product.quantity);
-                                    setState(() {
-                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
-                });},
-                                    icon: const Icon(Icons.add),
-                                  ),
-                                  Text(product.quantity.toString()),
-                                  IconButton(
-                                    onPressed: () async {
-                                      await productController.decreaseItem(context, product.id, product.quantity);
-                                   setState(() {
-                  productsFuture = productController.getProduct();
-                }); },
-                                    icon: const Icon(Icons.remove),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () async{
-                                     await productController.deleteItem(context, products[index].id);
-                                     setState(() {
-                  productsFuture = productController.getProduct();
-                }); } ,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
