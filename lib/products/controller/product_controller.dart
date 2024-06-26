@@ -6,31 +6,39 @@ import 'package:flutter/material.dart';
 class ProductController with ChangeNotifier {
   List<Product> productsList = [];
 
-  Future<List<Product>> getProduct({String? categoryFilter}) async {
-    final db = FirebaseFirestore.instance;
+  Future<List<Product>> getProduct({String? categoryFilter, String? nameFilter}) async {
+  final db = FirebaseFirestore.instance;
 
-    try {
-      QuerySnapshot querySnapshot;
+  try {
+    QuerySnapshot querySnapshot;
 
-      if (categoryFilter != null && categoryFilter.isNotEmpty) {
-        querySnapshot = await db
-            .collection('products')
-            .where('category', isEqualTo: categoryFilter)
-            .get();
-      } else {
-        querySnapshot = await db.collection('products').get();
-      }
-      productsList = querySnapshot.docs
-          .map((document) => Product.fromSnapshot(document))
-          .where((product) => product.id != 'SaAf7kOeu93DulrFYQvv')
-          .toList();
-      notifyListeners();
-      return productsList;
-    } catch (e) {
-      print("Erro ao buscar produtos: $e");
-      throw e;
+    if (categoryFilter != null && categoryFilter.isNotEmpty) {
+      querySnapshot = await db
+          .collection('products')
+          .where('category', isEqualTo: categoryFilter)
+          .get();
+    } else if (nameFilter != null && nameFilter.isNotEmpty) {
+      querySnapshot = await db
+          .collection('products')
+          .where('name', isEqualTo: nameFilter)
+          .get();
+    } else {
+      querySnapshot = await db.collection('products').get();
     }
+
+    List<Product> productsList = querySnapshot.docs
+        .map((document) => Product.fromSnapshot(document))
+        .where((product) => product.id != 'SaAf7kOeu93DulrFYQvv')
+        .toList();
+
+    notifyListeners();
+    return productsList;
+  } catch (e) {
+    print("Erro ao buscar produtos: $e");
+    throw e;
   }
+}
+
 
   Future<void> addProduct(context, Product product) async {
     var result = productsList.where((item) => item.name == product.name);
@@ -78,12 +86,37 @@ class ProductController with ChangeNotifier {
               }
             },
           );
-          print("Diminuiu a quantidade em 1");
         } else {
-          print("produto $id não encontrado");
+          ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ocorreu um erro, ao encontrar o produto',
+                style: TextStyle(fontSize: 10),
+              ),
+              Icon(Icons.error)
+            ],
+          ),
+        ));
         }
       } catch (e) {
-        print("Erro ao atualizar produto: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ocorreu um erro, ao atualizar o produto',
+                style: TextStyle(fontSize: 10),
+              ),
+              Icon(Icons.error)
+            ],
+          ),
+        ));
         throw e;
       }
     }
@@ -107,12 +140,37 @@ class ProductController with ChangeNotifier {
               }
             },
           );
-          print("Diminuiu a quantidade em 1");
         } else {
-          print("produto $id não encontrado");
+           ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ocorreu um erro, ao atualizar o produto',
+                style: TextStyle(fontSize: 10),
+              ),
+              Icon(Icons.error)
+            ],
+          ),
+        ));
         }
       } catch (e) {
-        print("Erro ao atualizar produto: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ocorreu um erro, ao atualizar o produto',
+                style: TextStyle(fontSize: 10),
+              ),
+              Icon(Icons.error)
+            ],
+          ),
+        ));
         throw e;
       }
     }
@@ -169,7 +227,20 @@ class ProductController with ChangeNotifier {
             ),
           );
         } else {
-          print("Nenhum produto encontrado");
+           ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Nenhum produto encontrado!',
+                style: TextStyle(fontSize: 10),
+              ),
+              Icon(Icons.error)
+            ],
+          ),
+        ));
         }
       } catch (e) {
         print("Erro ao deletar produto: $e");

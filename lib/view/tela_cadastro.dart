@@ -1,24 +1,29 @@
-import 'package:alaska_estoque/ui/tela_cadastro.dart';
+import 'package:alaska_estoque/view/tela_login.dart';
 import 'package:alaska_estoque/user/controller/user_controller.dart';
+import 'package:alaska_estoque/user/model/user_model.dart';
 import 'package:flutter/material.dart';
 
-class Login extends StatefulWidget {
-  
-    Login({super.key});
-
-  @override
-  State<Login> createState() => _LoginState();
+void main() {
+  runApp(Cadastro());
 }
 
-class _LoginState extends State<Login> {
+class Cadastro extends StatefulWidget {
 
-    UserController userController = UserController();
+  @override
+  State<Cadastro> createState() => _CadastroState();
+}
+
+class _CadastroState extends State<Cadastro> {
+
+  UserController userController = UserController();
+    final nomeController = TextEditingController();
+    final codigoController = TextEditingController();
     final emailController = TextEditingController();
     final senhaController = TextEditingController();
-    
+
+
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       body: Center(
         child: Padding(
@@ -29,6 +34,26 @@ class _LoginState extends State<Login> {
               Image.asset('assets/Alaska Logo.png', height: 160, width: 160,),
               
               SizedBox(height: 32,),
+
+              TextField(
+                controller: nomeController,
+                decoration: InputDecoration(
+                  labelText: 'Nome',
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              SizedBox(height: 8.0),
+              
+              TextField(
+                controller: codigoController,
+                decoration: InputDecoration(
+                  labelText: 'Código de validação',
+                  prefixIcon: Icon(Icons.verified_user),
+                  suffixIcon: Icon(Icons.visibility_off),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 8.0),
               
               TextField(
                 controller: emailController,
@@ -52,10 +77,17 @@ class _LoginState extends State<Login> {
               SizedBox(height: 32.0),
               
               ElevatedButton(
+                
                 onPressed: () {
-                userController.login(context,emailController.text, senhaController.text);
+                  UserModel user = UserModel(
+                  email: emailController.text, 
+                  senha: senhaController.text,
+                  nome: nomeController.text,
+                  
+                  );
+                  userController.cadastrar(context, user, codigoController.text);
                 },
-                child: Text('Entrar', style: TextStyle(color: Colors.white, fontSize: 20)),
+                child: Text('Criar conta', style: TextStyle(color: Colors.white, fontSize: 20)),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 64.0, vertical: 18.0),
                   backgroundColor: Colors.blue[900],
@@ -69,11 +101,11 @@ class _LoginState extends State<Login> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Não tem uma conta?'),
+                  Text('Já tem uma conta?'),
                   TextButton(
-                    onPressed: (){ Navigator.push(context,MaterialPageRoute(builder: (context) => Cadastro()),);},
+                    onPressed: (){ Navigator.push(context,MaterialPageRoute(builder: (context) => Login()),);},
                     child:
-                    Text('Cadastre-se',
+                    Text('Faça login',
                   style: TextStyle(color: Colors.blue)))
                   ]
               ),

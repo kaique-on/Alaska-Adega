@@ -1,12 +1,13 @@
 import 'package:alaska_estoque/products/controller/product_controller.dart';
 import 'package:alaska_estoque/products/model/product_model.dart';
+import 'package:alaska_estoque/view/widgetsScreens/editar.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
   // final user;
-  const Home({super.key,/* required this.user*/});
+  // const Home({super.key, required this.user});
 
   @override
   State<Home> createState() => _HomeState();
@@ -15,6 +16,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late Future<List<Product>> productsFuture;
   late ProductController productController;
+  String selectedCategory = 'geral';
+  List<Product> filteredProducts = [];
 
   @override
   void initState() {
@@ -23,7 +26,15 @@ class _HomeState extends State<Home> {
     productsFuture = productController.getProduct();
   }
 
-  final textoItem = TextEditingController();
+  void filterProducts() {
+    if (selectedCategory == 'geral') {
+      filteredProducts = productController.productsList;
+    } else {
+      filteredProducts = productController.productsList
+          .where((product) => product.category == selectedCategory)
+          .toList();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +45,6 @@ class _HomeState extends State<Home> {
             padding: const EdgeInsets.all(8),
             child: ElevatedButton(
               onPressed: () async {
-                final productController = Provider.of<ProductController>(context, listen: false);
                 await productController.addProduct(
                   context,
                   Product(
@@ -66,11 +76,15 @@ class _HomeState extends State<Home> {
                   );
                 }
 
-                List<Product> products = snapshot.data ?? [];
-                Set<String> categories = products.map((product) => product.category).toSet();
+                if (snapshot.hasData) {
+                  productController.productsList = snapshot.data!;
+                  filterProducts();
+                }
+
+                Set<String> categories = productController.productsList.map((product) => product.category).toSet();
                 categories.add('geral');
 
-                if (products.isEmpty) {
+                if (productController.productsList.isEmpty) {
                   return const Center(child: Text("Nenhum item na lista"));
                 }
 
@@ -82,20 +96,17 @@ class _HomeState extends State<Home> {
                       child: Row(
                         children: categories.map((category) {
                           return GestureDetector(
-                            onTap: () async {
+                            onTap: () {
                               setState(() {
-                                if (category == "geral") {
-                                  productsFuture = productController.getProduct(); // Carrega todos os produtos
-                                } else {
-                                  productsFuture = productController.getProduct(categoryFilter: category);
-                                }
+                                selectedCategory = category;
+                                filterProducts();
                               });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                               margin: const EdgeInsets.only(right: 10),
                               decoration: BoxDecoration(
-                                color: Colors.blue,
+                                color: selectedCategory == category ? Colors.blue : Colors.grey,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -109,9 +120,9 @@ class _HomeState extends State<Home> {
                     ),
                     Expanded(
                       child: ListView.builder(
-                        itemCount: products.length,
+                        itemCount: filteredProducts.length,
                         itemBuilder: (context, index) {
-                          Product product = products[index];
+                          Product product = filteredProducts[index];
                           return ListTile(
                             title: Text(product.name),
                             subtitle: Text('Preco: ${product.price.toStringAsFixed(2)}'),
@@ -122,27 +133,29 @@ class _HomeState extends State<Home> {
                                   IconButton(
                                     onPressed: () async {
                                       await productController.addItem(context, product.id, product.quantity);
-                                    setState(() {
-                  productsFuture = productController.getProduct(); // Atualiza a lista de produtos após adicionar um novo produto
-                });},
+                                      setState(() {
+                                        filterProducts();
+                                      });
+                                    },
                                     icon: const Icon(Icons.add),
                                   ),
                                   Text(product.quantity.toString()),
                                   IconButton(
                                     onPressed: () async {
                                       await productController.decreaseItem(context, product.id, product.quantity);
-                                   setState(() {
-                  productsFuture = productController.getProduct();
-                }); },
+                                      setState(() {
+                                        filterProducts();
+                                      });
+                                    },
                                     icon: const Icon(Icons.remove),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete),
-                                    onPressed: () async{
-                                     await productController.deleteItem(context, products[index].id);
-                                     setState(() {
-                  productsFuture = productController.getProduct();
-                }); } ,
+                                    onPressed: ()  {
+                                      setState(() {
+                                        filterProducts();
+                                      });
+                                    },
                                   ),
                                 ],
                               ),
